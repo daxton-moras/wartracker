@@ -11,4 +11,7 @@ jobs:
     steps:
       - name: Call refresh endpoint
         run: |
-          curl -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/refresh"
+          curl -L -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/refresh"
+
