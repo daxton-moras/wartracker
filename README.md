@@ -1,7 +1,3 @@
-Yes — here is a polished `README.md` tailored to your current project: a Vercel-hosted conflict and market tracker with a frontend dashboard, backend API routes, Supabase storage, Finnhub market data, and planned EIA/GDELT integration. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/75890996/e37919bc-b39e-4a92-a987-0e12d4bd515d/Screenshot-2026-03-15-at-14.59.46.jpg)
-
-You can copy-paste this directly into your repo as `README.md`.
-
 ```md
 # WAR ROOM
 
