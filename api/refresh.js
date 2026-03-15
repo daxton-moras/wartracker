@@ -7,7 +7,10 @@ const supabase = createClient(
 
 async function getJson(url) {
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed: ${response.status}`);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Request failed: ${response.status} ${text}`);
+  }
   return response.json();
 }
 
@@ -18,14 +21,10 @@ module.exports = async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Unauthorized' });
     }
 
-    const [spy, ita, gdelt, brent] = await Promise.all([
+    const [spy, ita] = await Promise.all([
       getJson(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${process.env.FINNHUB_API_KEY}`),
-      getJson(`https://finnhub.io/api/v1/quote?symbol=ITA&token=${process.env.FINNHUB_API_KEY}`),
-      getJson(`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent('(Iran OR Israel OR US) AND (missile OR drone OR strike OR oil OR Hormuz)')}&mode=ArtList&maxrecords=10&format=json&sort=datedesc`),
-      getJson(`https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${process.env.EIA_API_KEY}&frequency=daily&data[0]=value&facets[product][]=EPCBRENT&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1`)
+      getJson(`https://finnhub.io/api/v1/quote?symbol=ITA&token=${process.env.FINNHUB_API_KEY}`)
     ]);
-
-    const brentValue = brent?.response?.data?.[0]?.value || null;
 
     const metrics = [
       {
@@ -47,47 +46,23 @@ module.exports = async (req, res) => {
         change_pct: ita.dp ?? null,
         source_name: 'Finnhub',
         source_url: 'https://finnhub.io/'
-      },
-      {
-        metric_key: 'brent',
-        label: 'Brent Crude',
-        category: 'energy',
-        value_num: brentValue,
-        value_text: brentValue ? `$${brentValue}` : null,
-        change_pct: null,
-        source_name: 'EIA',
-        source_url: 'https://www.eia.gov/opendata/'
       }
     ];
 
-    const { error: metricsError } = await supabase
+    const { error } = await supabase
       .from('metrics')
       .upsert(metrics, { onConflict: 'metric_key' });
 
-    if (metricsError) throw metricsError;
+    if (error) throw error;
 
-    const reports = (gdelt.articles || []).map((a) => ({
-      title: a.title || 'Untitled report',
-      body: '',
-      actor: 'multi',
-      region: a.sourcecountry || 'unknown',
-      status: 'reported',
-      source_name: a.domain || 'GDELT',
-      source_url: a.url,
-      published_at: a.seendate || null
-    }));
-
-    if (reports.length) {
-      const { error: reportsError } = await supabase
-        .from('reports')
-        .upsert(reports, { onConflict: 'source_url' });
-
-      if (reportsError) throw reportsError;
-    }
-
-    res.status(200).json({ ok: true, saved: true });
+    return res.status(200).json({
+      ok: true,
+      saved: metrics.length
+    });
   } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
   }
 };
-
