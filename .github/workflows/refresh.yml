@@ -1,11 +1,13 @@
-name: Refresh
+name: Refresh wartracker data
 
 on:
+  schedule:
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Echo
-        run: echo "Refresh workflow triggered"
+      - name: Call refresh endpoint
+        run: curl -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/refresh"
