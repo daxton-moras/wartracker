@@ -1,0 +1,11 @@
+name: Refresh
+
+on:
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo
+        run: echo "Refresh workflow triggered"
